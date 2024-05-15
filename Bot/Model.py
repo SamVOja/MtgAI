@@ -1,5 +1,7 @@
 import json
 import torch
+import numpy as np
+import torch.nn.functional as F
     
 class Model(torch.nn.Module): 
     def __init__(self, n_cards, random_initial):
@@ -9,18 +11,22 @@ class Model(torch.nn.Module):
         self.n_archetypes = 10 
         self.relu = torch.nn.ReLU()
         self.linear = torch.nn.Linear(321, 10)
-        self.linear.bias = torch.nn.Parameter(torch.tensor(1.0))
+
+        #self.linear.bias = torch.nn.Parameter(torch.tensor(1.0))
+        self.linear.bias.data.fill_(0.5)
         
         if random_initial:
             self.weights = self.Random_Weights()
         else:
             self.weights = self.Initial_Weights()
 
-    def Random_Weights(self): #Uniform distribution
+    def Random_Weights(self): 
+        """Weights initialized as a Uniform distribution"""
         initial_weights = torch.nn.Parameter(torch.rand(self.n_cards, self.n_archetypes))
         return initial_weights  
 
-    def Initial_Weights(self): #Weights defined by simple heuristics
+    def Initial_Weights(self): 
+        """Weights initialized by simple heuristics"""
         json_file_path = 'data/json/MKM_weights.json'
         with open(json_file_path, 'r') as file:
             data = json.load(file)
@@ -47,11 +53,11 @@ class Model(torch.nn.Module):
         Avg_Cost /= index #avg mana of pool at every pick
 
         self.linear.weight = torch.nn.Parameter(self.weights.T)
-        arch_bias = self.linear(pool)
+        arch_bias = self.relu(self.linear(pool))
         card_weights = (cards.view((batch_size, self.n_cards, 1)) * self.weights.reshape((1, self.n_cards, self.n_archetypes)))
+        #shape[39, 321, 10]
         
         arch_bias_expanded = arch_bias.unsqueeze(1) # Shape [39, 1, 10]
 
         current_choice = torch.mul(arch_bias_expanded, card_weights).sum(dim=-1)
-        current_choice = self.relu(current_choice)
-        return current_choice
+        return F.softmax(current_choice, dim=-1)
