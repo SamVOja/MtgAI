@@ -2,7 +2,10 @@ import matplotlib.pyplot as plt
 import csv
 import json
 
+"""Analyze games played by human players"""
+
 def calculate_card_playrate(csv_file_path):
+    """How much of each card was played"""
     column_sums = {}
     with open(csv_file_path, 'r') as csvfile:
         reader = csv.DictReader(csvfile)
@@ -18,7 +21,7 @@ def calculate_card_playrate(csv_file_path):
     return column_sums
 
 def calculate_player_winrate(csv_file_path):
-
+    """Calculate average winrate for the players in the data"""
     with open(csv_file_path, 'r') as csvfile:
         data = csv.DictReader(csvfile)
         col = data.fieldnames[17]
@@ -34,6 +37,8 @@ def calculate_player_winrate(csv_file_path):
     return total_games, wins, winrate
 
 def calculate_card_winrate(csv_file_path):
+    """Calculate average winrate for each card considering only situations
+    where a player had the card in their hand during the game."""
     played_sums = {}
     win_sums = {}
     winrate = {}
@@ -66,6 +71,7 @@ def calculate_card_winrate(csv_file_path):
     return winrate
 
 def plot_cards(column_sums):
+    """plot how much of each card was played"""
     first_five = dict(list(column_sums.items())[:5])
     remaining = dict(list(column_sums.items())[5:105])
 
@@ -93,10 +99,11 @@ def plot_cards(column_sums):
     plt.show()
     
 def save_winrate_to_json(winrate, json_file_path):
+    """Write cards average winrates to a json file"""
     with open(json_file_path, 'w') as jsonfile:
         json.dump(winrate, jsonfile)
         
-def plot_winrate(winrate):
+def plot_winrate(winrate): #not used
     plt.figure(figsize=(20, 8))
     plt.bar(winrate.keys(), winrate.values(), color='skyblue')
     plt.xlabel('Card name')
@@ -105,20 +112,49 @@ def plot_winrate(winrate):
     plt.xticks(rotation=45, fontsize=10)
     plt.tight_layout()
     plt.show()
+    
+def plot_archetype_preference(csv_file_path):
+    """Plot ratio of each two color archetypes when compared to other two color
+    archetypes. Other archetypes are ignored"""
+    archetype_names = ["WU", "WB", "WR", "WG", "UB", "UR", "UG", "BR", "BG", "RG"]
+    
+    color_counts = {archetype: 0 for archetype in archetype_names}
+    with open(csv_file_path, 'r') as csvfile:
+        data = csv.DictReader(csvfile)
+        col = data.fieldnames[10]  # "main_colors"
+
+        total_rows = 0
+        for row in data:
+            colors = row[col]
+            if colors in color_counts:
+                color_counts[colors] += 1
+                total_rows += 1
+                if total_rows >= 20000:
+                    break
+
+    plt.figure(figsize=(10, 6))
+    plt.bar(color_counts.keys(), [count/total_rows for count in color_counts.values()], color='skyblue')
+    plt.xlabel('Colors')
+    plt.ylabel('Count')
+    plt.title('Archetype Preference by colors')
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.show()
 
 
 csv_file_path = 'data/csv/game_data_public.MKM.PremierDraft.csv'
-winrate = calculate_card_winrate(csv_file_path)
 json_file_path = 'data/json/MKM_winrate.json'
-save_winrate_to_json(winrate, json_file_path) 
-total_games, value, winrate = calculate_player_winrate(csv_file_path)
+#winrate = calculate_card_winrate(csv_file_path)
+#save_winrate_to_json(winrate, json_file_path) 
 
-print("Total Games:", total_games)
-print("Wins:", value)
-print("Victory Rate: {:.2f}%".format(winrate))
+#total_games, value, winrate = calculate_player_winrate(csv_file_path)
+#print("Total Games:", total_games)
+#print("Wins:", value)
+#print("Victory Rate: {:.2f}%".format(winrate))
 
-#playrate = calculate_card_playrate(csv_file_path)
-#plot_cards(playrate) 
+plot_archetype_preference(csv_file_path)
+playrate = calculate_card_playrate(csv_file_path)
+plot_cards(playrate)
 
 
 
