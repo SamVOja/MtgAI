@@ -10,8 +10,8 @@ class Picker:
 
         self.picks = []
         
-        if picker == "Weighted":
-            self.picker = self.Weighted
+        if picker == "WeightedvsWeighted":
+            self.picker = self.WeightedvsWeighted
         elif picker == "Rare":
             self.picker = self.Rare
         elif picker == "Random":
@@ -22,6 +22,7 @@ class Picker:
             self.picker = self.Random
     
     def Random(self, packs, arch_weights):
+        """"Make random choices"""
         picks = []
         for pack in packs:
             pick = random.choice(pack)
@@ -29,83 +30,8 @@ class Picker:
             pack.remove(pick)
         return packs, picks
     
-    def calc_archetype_prefdel(self, drafter): #DELETE  
-        max_value = -1
-        max_arch = None
-        #vals = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-        arch_vals = {card_type: 0 for card_type in self.archetype_names}
-        #print(self.picks)
-        #print(self.picks[i][drafter])
-        total_rows = len(self.picks)
-        for i, row in enumerate(self.picks):
-            pick = row[drafter] #correct?
-            
-            #if drafter == 0:
-            #print(i)
-            factor = 1 - i / 5
-            #if drafter == 0 and factor > 0:
-            #    print(factor)
-            #    #print(pick["name"])
-                
-            name = pick["name"]
-            arch_weight = self.weights[name]
-            color = pick["colorIdentity"]
-            if len(color) > 0:
-                #i = 0
-
-                for arch in self.archetype_names:
-                    overlap = set(arch) & set(color)
-
-                    if factor > 0:
-                        if len(overlap) > 0 and len(color) == 1:
-                            arch_vals[arch] += arch_weight[arch] * factor
-                        elif len(overlap) == 1:
-                            arch_vals[arch] += arch_weight[arch] * factor
-                    #i += 1
-        max_value = max(arch_vals.values())
-        
-        max_keys = [key for key, value in arch_vals.items() if value == max_value]  # Step 2: Create a list of keys with the maximum value
-        max_arch = random.choice(max_keys)
-        
-        #max_arch = self.archetype_names[arch_index]  
-        #if drafter == 0:
-        #    #print(max_arch)
-        #    print(max_value, max_arch)   
-        return max_arch
-    
-    def calc_archetype_pref(self, drafter): 
-        first_pick = self.picks[0][drafter]
-        
-        name = first_pick["name"]
-        #print(name)
-        arch_weight = self.weights[name]
-        color = first_pick["colorIdentity"]
-        if len(color) == 0:
-            pref = random.choice(self.archetype_names)
-            return pref
-        list = []
-        for arch in self.archetype_names:
-            overlap = set(arch) & set(color)
-            #print(overlap)
-            #print(color)
-            if len(overlap)/len(arch) == 1:
-                pref = arch
-                #print("CALCED", pref)
-                return pref
-            elif len(overlap)/len(arch) == 0.5:
-                list.append(arch)
-        if list:
-            pref = random.choice(list)  
-            return pref
-        pref = random.choice(self.archetype_names) 
-        return pref
- 
-    
-    def compare_rarity(self, previous_best, new_card):
-        Rarities = {"common": 1, "uncommon": 2, "list": 3, "rare": 4, "mythic": 5}
-        return Rarities.get(new_card["rarity"], 0) > Rarities.get(previous_best["rarity"], 0) 
-    
     def Rare(self, packs, arch_weights):
+        """"Choose the rarest card for the player's archetype"""
         picks = []
         for i, pack in enumerate(packs):
             pref = self.pref[i]
@@ -163,10 +89,11 @@ class Picker:
         return packs, picks
     
     def WeightedvsRare(self, packs, arch_weights):
+        """Make weighted pick for 1 player and use rare picker for the rest"""
         picks = []
         for i, pack in enumerate(packs):
             if i == 0:
-                picks.append(self.Weighteds(pack))
+                picks.append(self.Weighted(pack))
             else:
                 pref = self.pref[i]
                 if pref == None and self.picks:
@@ -221,8 +148,17 @@ class Picker:
             #print([card['name'] for card in picks])
         self.picks.append(picks)
         return packs, picks
+    
+    def WeightedvsWeighted(self, packs, arch_weights): 
+        """Make weighted pick for all players"""
+        picks = []
+        for i, pack in enumerate(packs):
+            picks.append(self.Weighted(pack))
+        self.picks.append(picks)
+        return packs, picks
 
-    def Weighteds(self, pack): #change
+    def Weighted(self, pack):
+        """Make a weighted pick for 1 player""" 
         picks = []
         max_card = None
         arch_vals = {arch: 0 for arch in self.archetype_names}
@@ -240,55 +176,55 @@ class Picker:
         #print(arch_vals)
         
         #calc option weights
+        
         max_val = 0
         for k, card in enumerate(pack):
-            option_weights = [self.weights[card["name"]][key] * (1+arch_vals[key]) for key in self.weights[card["name"]]]
+            option_weights = [self.weights["bias"][key] * 
+                              self.weights[card["name"]][key] * 
+                              (1+arch_vals[key]) 
+                              for key in self.weights[card["name"]]]
             #print(option_weights) #max_card = max in rows
 
             if max(option_weights) > max_val:
                 max_card = card
                 max_val = max(option_weights)
-                max_indices = [j for j, v in enumerate(option_weights) if v == max_val]  # Collect indices of all occurrences of max_value
-                max_val = self.archetype_names[random.choice(max_indices)]
+                #max_indices = [j for j, v in enumerate(option_weights) if v == max_val]  # Collect indices of all occurrences of max_value
+                #max_val = self.archetype_names[random.choice(max_indices)]
                       
         pick = max_card 
         pack.remove(pick)
         return pick
+
+    def calc_archetype_pref(self, drafter): 
+        """"Determine archetype preference for Rare picker"""
+        first_pick = self.picks[0][drafter]
+        
+        name = first_pick["name"]
+        #print(name)
+        arch_weight = self.weights[name]
+        color = first_pick["colorIdentity"]
+        if len(color) == 0:
+            pref = random.choice(self.archetype_names)
+            return pref
+        list = []
+        for arch in self.archetype_names:
+            overlap = set(arch) & set(color)
+            #print(overlap)
+            #print(color)
+            if len(overlap)/len(arch) == 1:
+                pref = arch
+                return pref
+            elif len(overlap)/len(arch) == 0.5:
+                list.append(arch)
+        if list:
+            pref = random.choice(list)  
+            return pref
+        pref = random.choice(self.archetype_names) 
+        return pref
+ 
     
-    def Weighted(self, packs, arch_weights): #change
-        picks = []
-        for i, pack in enumerate(packs):
-            max_card = None
-            arch_vals = {arch: 0 for arch in self.archetype_names}
-
-            #calc pool weights (archetype preference)
-            for k, row in enumerate(self.picks):
-                #print(k)
-                #print(len(self.picks))
-                pick = row[i]
-                #print(pick)
-                arch_weight = self.weights[pick["name"]]
-                for arch in self.archetype_names:
-                    arch_vals[arch] += arch_weight[arch]
-            #print(arch_vals)
-            
-            #calc option weights
-            max_val = 0
-            for k, card in enumerate(pack):
-                option_weights = [self.weights[card["name"]][key] * (1+arch_vals[key]) for key in self.weights[card["name"]]]
-
-                if max(option_weights) > max_val:
-                    max_card = card
-                    max_val = max(option_weights)
-                    max_indices = [j for j, v in enumerate(option_weights) if v == max_val]  # Collect indices of all occurrences of max_value
-                    max_val = self.archetype_names[random.choice(max_indices)]
-                    
-            pick = max_card 
-            picks.append(pick)
-            pack.remove(pick)
-        #print(arch_weights[0])
-        #print("AI:", end= " ")
-        #print([card['name'] for card in picks])
-        self.picks.append(picks)
-        return packs, picks
+    def compare_rarity(self, previous_best, new_card):
+        """Return true if new_card has better rarity than a previous card"""
+        Rarities = {"common": 1, "uncommon": 2, "list": 3, "rare": 4, "mythic": 5}
+        return Rarities.get(new_card["rarity"], 0) > Rarities.get(previous_best["rarity"], 0) 
     

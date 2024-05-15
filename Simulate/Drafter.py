@@ -14,6 +14,7 @@ class Draft:
         self.picks = []
 
     def pick(self, packs):
+        """Each player makes a pick using the chosen picker method"""
         packs, picks = self.picker.picker(packs, self.arch_weights)
         self.picks.append(picks)
         self.update_arch_weights(picks)
@@ -21,6 +22,7 @@ class Draft:
         return packs
     
     def pass_packs(self, packs):
+        """Each player gives the current pack they have to the next player"""
         last_element = packs[-1]
         for i in range(len(packs)-1, 0, -1):
             packs[i] = packs[i-1]
@@ -28,6 +30,7 @@ class Draft:
         return packs
     
     def draft(self):
+        """Operate the draft"""
         for _ in range(self.n_rounds): #3 pack
             packs = [self.packs.random_pack() for _ in range(self.n_drafters)]
             for _ in range(self.n_cards_in_pack): #13 picks (1 per call)
@@ -37,6 +40,7 @@ class Draft:
         #self.picker.arch_weights.clear()
         
     def create_arch_weights(self):
+        """Initialize archetype weights"""
         result_dict = {}
         for i in range(0, self.n_drafters):
             inner_dict = {}
@@ -46,6 +50,7 @@ class Draft:
         return result_dict 
         
     def update_arch_weights(self, picks):
+        """Update archetype weights based on the cards the players have selected"""
         for i in range(self.n_drafters): 
             drafter_pick = picks[i]["name"]
             pick_weights = self.weights[drafter_pick]

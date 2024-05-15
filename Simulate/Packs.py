@@ -8,21 +8,24 @@ class Pack:
         self.n_cards = len(self.card_names)
       
     def rarities(self, cards):  
+        """Sort all cards by their rarity"""
         rarities = {'common': [], 'uncommon': [], 'rare': [], 'mythic': [], 'list': []}
         for card in cards:
             rarity = card['rarity']
             if rarity in rarities:
                 rarities[rarity].append(card)
             else:
-                print("A card has no rarity!")
+                print("Rarity missing")
         return rarities['common'], rarities['uncommon'], rarities['rare'], rarities['mythic'], rarities['list']  
     
     def wildCard(self): 
+        """can be anything but a list card"""
         wildcards_pool = ['common', 'uncommon', 'raremythic']
         wildcards = random.choices(wildcards_pool, k=2)
         return wildcards
     
     def listCard(self): 
+        """87.5% chance to be common, otherwise a list card"""
         if random.random() < 0.875:
             listcard = 0
         else:
@@ -30,7 +33,8 @@ class Pack:
         return listcard
 
     def random_pack(self):
-        n_commons = 6
+        """Create a pack of cards (play booster)."""
+        n_commons = 6 
         n_uncommons = 3
         n_raremythics = 1
         wildcards = self.wildCard()
