@@ -20,9 +20,9 @@ pool = pd.read_sql_query("SELECT * FROM pool;", conn, index_col=['draft', 'draft
 mana = pd.read_sql_query("SELECT * FROM mana;", conn) 
 
 N_Cards = int(packs.shape[1]) 
-N_Training= int(packs.shape[0] * 0.8)
-N_Validation = N_Training / 8
-N_Testing = N_Training / 8
+N_Training= int(packs.shape[0] * 0.85)
+N_Validation = int(packs.shape[0] * 0.15)
+N_Testing = int(packs.shape[0] * 0.15)
 
 #print(packs.shape[1])
 #print(picks.shape[1])
@@ -46,7 +46,7 @@ X.iloc[:, 0:N_Cards] = np.sign(X.iloc[:, 0:N_Cards])
 y = pd.Series(np.argmax(picks.values, axis=1), index=picks.index)
 y_names = picks.columns
 
-nb_samples = 10000
+nb_samples = 50000 #10000
 features = torch.randn(nb_samples, 10)
 labels = torch.empty(nb_samples, dtype=torch.long).random_(10)
 adjacency = torch.randn(nb_samples, 5)
@@ -71,19 +71,28 @@ test_batcher = DataLoader(test, batch_size=39)
 #bot = Model(n_cards=N_Cards, random_initial=True)
 bot = Model(n_cards=N_Cards, random_initial=False)
 
-trainer = Trainer(n_epochs=100, learn_rate=0.001)
+trainer = Trainer(n_epochs=100, learn_rate=0.005)
 trainer.fit(bot, train_batcher, test_batcher)
   
+print(bot.linear.bias)
 print("TRAINING DONE")
 
 file_path = 'data/json/MKM_learned_weights.json'
 with open(file_path, 'w') as file:
+    bias = bot.linear.bias.detach().numpy().tolist()
+    sum_bias = sum(bias) 
+
+    normalized_bias = [10*b / sum_bias for b in bias]
     weights = bot.weights.detach().numpy().tolist()
     colors = ["WU", "WB", "WR", "WG", "UB", "UR", "UG", "BR", "BG", "RG"]
     d = {
-        cardnm: {
-            colors[i]: x for i, x in zip(range(len(row)), row)}
+        "bias": {
+            colors[i]: x for i, x in enumerate(normalized_bias)
+        },
+        **{cardnm: {
+            colors[i]: x for i, x in enumerate(row)}
         for cardnm, row in zip(y_names, weights)}
+        }
     json.dump(d, file, indent=4)
 
 plotter = TrainingPlotter()

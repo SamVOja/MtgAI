@@ -1,0 +1,18 @@
+MKM is one of the sets in Magic: The Gathering and is the only one used in 
+this program, but using the tools provided here other sets can also be
+processed to work with the program.
+format_card_data.py: processes set data to create "MKM_filtered.json"
+Create_Weights.py: creates heuristic initial weights "MKM_weights.json"
+
+
+1. run format_training_data.py (needs draft_data...csv)
+        Asks how much data to process
+        creates file "training.sqlite"
+
+2. run trainmodel.py       
+        creates file "MKM_learned_weights.json"
+        Analyze_training.py plots loss
+
+3. run simulate_draft.py
+        Asks how many drafts to simulate
+        Analyze_simulations.py is ran immeadiately instead of saving the results
