@@ -86,6 +86,7 @@ def insert_n_data(csv_file, n_drafter):
                 i = insert_data_row(i, row, drafter, pack_columns, pool_columns)
     print(total_skipped_lines)
 
+n_drafters = int(input("Enter amount of played drafts to use for training: ") or 20000)
 csv_file = "data/csv/draft_data_public.MKM.PremierDraft.csv"
 db_file = "data/sqlite/training.sqlite"
 json_file = "data/json/MKM_filtered.json"
@@ -94,7 +95,7 @@ cursor = conn.cursor()
 
 create_table(cursor, csv_file, json_file)
 
-insert_n_data(csv_file, 8*1250) #amount of drafters
+insert_n_data(csv_file, n_drafters) 
 
 conn.commit()
 conn.close()
