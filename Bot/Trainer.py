@@ -11,6 +11,7 @@ class Trainer:
         self.loss_function = torch.nn.CrossEntropyLoss()
         
     def fit(self, model, train_batcher, test_batcher):
+        optimizer = optim.SGD(model.parameters(), lr=self.learn_rate, weight_decay=1e-4)
         for i in range(self.n_epochs):
             epoch_train_loss = []
             epoch_test_loss = []
@@ -18,25 +19,28 @@ class Trainer:
             for Xb, yb in train_batcher:
                 raw_pred = model(Xb)  # call forward
 
-                mse_loss = self.loss_function(raw_pred, yb)
+                loss = self.loss_function(raw_pred, yb)
                 
-                mse_loss.backward()
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
                 
-                with torch.no_grad(): #update weights
-                    model.weights -= self.learn_rate * model.weights.grad
-                    model.linear.bias -= self.learn_rate * model.linear.bias.grad
+                with torch.no_grad(): #weight values between 0 and 1
+                    model.weights.data.clamp_(min=0, max=1)
                     
-                    model.zero_grad()  # Clear gradients
-                epoch_train_loss.append(mse_loss.item())
-            loss = sum(epoch_train_loss) / len(train_batcher)
-            self.epoch_training_losses.append(loss)
+                epoch_train_loss.append(loss.item())
+            loss_sum = sum(epoch_train_loss) / len(train_batcher)
+            self.epoch_training_losses.append(loss_sum)
             
             with torch.no_grad():
                     for Xb, yb in test_batcher:
                         test_pred = model(Xb)
-                        mse_loss = self.loss_function(test_pred, yb)
-                        epoch_test_loss.append(mse_loss.item())
-                    loss = sum(epoch_test_loss) / len(test_batcher)
-                    self.epoch_testing_losses.append(loss)
+                        loss = self.loss_function(test_pred, yb)
+                        epoch_test_loss.append(loss.item())
+                    loss_sum = sum(epoch_test_loss) / len(test_batcher)
+                    self.epoch_testing_losses.append(loss_sum)
+
+
+
 
 
