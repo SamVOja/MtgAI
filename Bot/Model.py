@@ -52,7 +52,7 @@ class Model(torch.nn.Module):
         
         Avg_Cost = torch.sum(pool * mana, dim=1)
         index = torch.arange(1, batch_size + 1, device=Avg_Cost.device).float()
-        Avg_Cost /= index #avg mana of pool at every pick
+        Avg_Cost /= index #avg mana of pool at every pick, unused
 
         arch_bias = self.relu(self.linear(pool))
         
@@ -64,10 +64,4 @@ class Model(torch.nn.Module):
         current_choice = torch.mul(arch_bias_expanded, card_weights).sum(dim=-1)
 
         return F.relu(current_choice)
-    
-    def stable_non_zero_log_softmax(self, x):
-        b = x.max(dim=1).values.view(-1, 1)
-        stabalized_x = (x - b * x.sign())
-        log_sum_exps = torch.log(torch.sum(x.sign() * torch.exp(stabalized_x), dim=1))
-        log_probs = x.sign() * (stabalized_x - log_sum_exps.view(-1, 1))
-        return log_probs
+
