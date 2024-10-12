@@ -10,19 +10,14 @@ class Plotter:
         card_counters = {card_type: 0 for card_type in card_types}
         for i, draft in enumerate(drafts):
             card_types_mapping = {card['name']: card['types'] for card in draft.packs.cards}
-            #print(i, draft)
             for drafter in range(drafters):
                 cards_pick = self.cards_in_archetype(drafter-1, draft)
                 for card_name in cards_pick:
-                    #print("name: " + card_name)
                     if card_name in card_types_mapping:
                         types = set(card_types_mapping[card_name])
                         for card_type in types:
-                            #print(card_type, end=" ")
                             if card_type in card_counters:
                                 card_counters[card_type] += 1
-        #print(card_counters)
-
         card_counters = {key: value / (drafters) / (i+1) for key, value in card_counters.items()}
         sorted_counters = dict(sorted(card_counters.items(), key=lambda item: item[1], reverse=True))
         plt.bar(sorted_counters.keys(), sorted_counters.values())
@@ -64,27 +59,18 @@ class Plotter:
                 for drafter in range(1, drafters+1):
                     cards = []
                     lands = []
-                    
-                    #picks = [pick[drafter] for pick in draft.picks] 
+
                     picks = self.cards_in_archetype(drafter-1, draft)
                     for card in picks:
-                        #if card["types"][0] == "Land":
-                        #    lands.append(data[card])
-                        #else:
                         cards.append(data[card])
 
                     sorted_list = sorted(cards, reverse=True)
-                    #print(len(sorted_list[:min(23, len(sorted_list))]))
                     full_list += sorted_list
                     best_list += sorted_list[:min(23, len(sorted_list))]
-                    
-                    #print(len(list))
-            #print(drafter)
-            #print(i)
             print("Average cards on color")
             print(len(full_list)/((drafter)*(i)))
             print("Average card winrate of 23 best cards (on color)")
-            print(sum(best_list)/(drafter)/(i)/(23)) #punish if less than 23
+            print(sum(best_list)/(drafter)/(i)/(23)) #penalize if less than 23
         
     def plot_mana_curve(self, drafters, drafts):
         """Print the average distribution of different costed cards drafted"""
@@ -103,7 +89,6 @@ class Plotter:
                             mana_counters[str(int(card_mana_mapping[card_name]))] += 1
                         else:
                             mana_counters["0"] += 1
-        #print(mana_counters)
         mana_counters = {key: value / (drafters) / (i+1) for key, value in mana_counters.items()}
         plt.bar(mana_counters.keys(), mana_counters.values())
         plt.xlabel('Mana cost')
@@ -134,7 +119,6 @@ class Plotter:
                     cards_in_archetype.append(card_name)
                 elif set(colors) & set(archetype):
                     cards_in_archetype.append(card_name)
-        #print("Cards in archetype: " + str(len(cards_in_archetype)))
         return cards_in_archetype
         
     def calc_archetype_preference(self, drafter, draft, picks): 
